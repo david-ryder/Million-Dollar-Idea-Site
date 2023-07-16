@@ -31,13 +31,19 @@ def create_message():
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute('INSERT INTO messages (message) VALUES (%s)', (message,))
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return "Message inserted successfully!"
+    try:
+        cur.execute('BEGIN')
+        cur.execute('INSERT INTO messages (message) VALUES (%s)', (tuple([message])))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return "Message inserted successfully!"
+    except Exception as e:
+        conn.rollback()
+        return f"Failed to insert message: {str(e)}"
+    finally:
+        cur.close()
+        conn.close()
 
 # Get all messages from database
 @app.route('/messages', methods=['GET'])
@@ -63,4 +69,4 @@ def read_messages():
 
 # Run the API
 if __name__ == '__main__':
-    app.run()
+    app.run(port=5001)
